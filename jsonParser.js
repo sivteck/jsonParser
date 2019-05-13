@@ -16,6 +16,12 @@ function isSigned (inp) {
   } else return null
 }
 
+function isNegative (inp) {
+  if (inp[0] === '-') {
+    return [inp[0], inp.slice(1)]
+  } else return null
+}
+
 function isDigit (inp) {
   var codeC = inp[0].charCodeAt()
   if ((codeC >= 48) && (codeC <= 57)) {
@@ -41,18 +47,37 @@ function isZero (inp) {
   if (inp[0] === '0') {
     return [inp[0], inp.slice(1)]
   }
+  return null
 }
 
 function returnsNull (inp) {
   return null
 }
 
-var funcs = [isSigned, isDigit, isDecimalPoint, isExponential]
-var afterSigned = [returnsNull, isDigit, returnsNull, returnsNull]
-var afterDigit = [returnsNull, isDigit, isDecimalPoint, isExponential]
-var afterDecimalPoint = [returnsNull, isDigit, returnsNull, returnsNull]
-var afterExponential = [isSigned, isDigit, returnsNull, returnsNull]
-var afterFuncs = [afterSigned, afterDigit, afterDecimalPoint, afterExponential]
+function manyParser (inp, parseF) {
+  var resp = parseF(inp)
+  var failed = 0
+  if (resp !== null) failed = 1
+  var respV = ''
+  var respS = ''
+  while (resp !== null) {
+    var [v, rem] = resp
+    respV += v
+    respS += rem
+    resp = parseF(inp)
+  }
+
+  if (failed !== 0) return [respV, respS]
+  else return null
+}
+
+var funcs = [isNegative, isZero, isDigit, isDecimalPoint, isExponential]
+var afterSigned = [returnsNull, isZero, isDigit, returnsNull, returnsNull]
+var afterZero = [returnsNull, returnsNull, returnsNull, isDecimalPoint, returnsNull]
+var afterDigit = [returnsNull, returnsNull, isDigit, isDecimalPoint, isExponential]
+var afterDecimalPoint = [returnsNull, returnsNull, isDigit, returnsNull, returnsNull]
+var afterExponential = [isSigned, returnsNull, isDigit, returnsNull, returnsNull]
+var afterFuncs = [afterSigned, afterZero, afterDigit, afterDecimalPoint, afterExponential]
 
 function applyFuncs (arrF, inpS) {
   var ret = new Array(arrF.length).fill(null)
@@ -94,24 +119,47 @@ function numberParser (s) {
   var parsed = ''
   var ind = 0
   var remainingString = s.slice(ind)
+  var expParsed = 0
+  var signParsed = 0
+  var startZeroesParsed = 0
+  var decimalPointsParsed = 0
 
   while (true) {
+    // Pick transition functions based on state
     var transitionF = pickFuncs(state, ind)
     if (transitionF !== null) state = applyFuncs(transitionF, remainingString)
-    else if (transitionF === null) return [parsed, remainingString]
-    // console.log('State after applying Functions')
-    // console.log(state)
-    if (state === null && ind !== 0) return [parsed, remainingString]
+    else if (transitionF === null) return [parsed * 1, remainingString]
+    // State after applying Functions
+    if (state === null && ind !== 0) return [parsed * 1, remainingString]
     else if (state === null && ind === 0) return null
 
-    // console.log('Transition Functions')
-    // console.log(transitionF)
-    // console.log('getResult Function')
-    // console.log(getResult(state))
     var [v, rest] = getResult(state)
+    if ((ind < 2) && (isZero(v) !== null)) startZeroesParsed++
+    // Handle starting zeroes
+    if (startZeroesParsed > 1) return [parsed * 1, v + rest]
+    // Handle recurring "E/e"
+    if (isExponential(remainingString)) expParsed++
+    // Handle recurring "+/-"
+    if (isSigned(remainingString)) signParsed++
+    // Handle recurring "." and decimal after "E/e"
+    if (isDecimalPoint(remainingString)) {
+      if (expParsed > 0) {
+        decimalPointsParsed += 2
+      } else decimalPointsParsed++
+    }
+    // Check and return parsed string if there is unwanted "e/E/+/-/."
+    if ((expParsed > 1) || (signParsed > 2) || (decimalPointsParsed > 1)) {
+      return [parsed * 1, v + rest]
+    }
+    // Check and return parsed string if "." occures after "e/E"
+    if (expParsed > 1 && v === '.') return [parsed * 1, v + rest]
     parsed += v
     ind++
     remainingString = rest
-    if (remainingString.length === 0) return [parsed, '']
+    if (remainingString.length === 0) return [parsed * 1, '']
   }
+}
+
+function stringParser (s) {
+
 }
