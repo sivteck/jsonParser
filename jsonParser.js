@@ -71,7 +71,7 @@ function manyParser (inp, parseF) {
   else return null
 }
 
-var funcs = [isNegative, isZero, isDigit, isDecimalPoint, isExponential]
+var funcs = [isNegative, isZero, isDigit, returnsNull, returnsNull]
 var afterSigned = [returnsNull, isZero, isDigit, returnsNull, returnsNull]
 var afterZero = [returnsNull, returnsNull, returnsNull, isDecimalPoint, returnsNull]
 var afterDigit = [returnsNull, returnsNull, isDigit, isDecimalPoint, isExponential]
@@ -135,8 +135,6 @@ function numberParser (s) {
 
     var [v, rest] = getResult(state)
     if ((ind < 2) && (isZero(v) !== null)) startZeroesParsed++
-    // Handle starting zeroes
-    if (startZeroesParsed > 1) return [parsed * 1, v + rest]
     // Handle recurring "E/e"
     if (isExponential(remainingString)) expParsed++
     // Handle recurring "+/-"
@@ -147,6 +145,12 @@ function numberParser (s) {
         decimalPointsParsed += 2
       } else decimalPointsParsed++
     }
+
+    // Handle starting zeroes
+    if (startZeroesParsed > 0 && (decimalPointsParsed === 0)) {
+      if (rest.length >= 1 && rest[0] !== '.') return null
+    }
+
     // Check and return parsed string if there is unwanted "e/E/+/-/."
     if ((expParsed > 1) || (signParsed > 2) || (decimalPointsParsed > 1)) {
       return [parsed * 1, v + rest]
