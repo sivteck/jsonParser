@@ -54,23 +54,6 @@ function returnsNull (inp) {
   return null
 }
 
-function manyParser (inp, parseF) {
-  var resp = parseF(inp)
-  var failed = 0
-  if (resp !== null) failed = 1
-  var respV = ''
-  var respS = ''
-  while (resp !== null) {
-    var [v, rem] = resp
-    respV += v
-    respS += rem
-    resp = parseF(inp)
-  }
-
-  if (failed !== 0) return [respV, respS]
-  else return null
-}
-
 var funcs = [isNegative, isZero, isDigit, returnsNull, returnsNull]
 var afterSigned = [returnsNull, isZero, isDigit, returnsNull, returnsNull]
 var afterZero = [returnsNull, returnsNull, returnsNull, isDecimalPoint, returnsNull]
@@ -164,6 +147,59 @@ function numberParser (s) {
   }
 }
 
-function stringParser (s) {
+function manyParser (inp, parseF) {
+  var resp = parseF(inp)
+  var failed = 0
+  if (resp !== null) failed = 1
+  var respV = ''
+  var respS = ''
+  while (resp !== null) {
+    var [v, rem] = resp
+    respV += v
+    respS += rem
+    resp = parseF(inp)
+  }
 
+  if (failed !== 0) return [respV, respS]
+  else return null
+}
+
+function isChar (c) {
+  function charParser (s) {
+    if (s[0] === c) return [c, s.slice(1)]
+    else return null
+  }
+  return charParser
+}
+
+function stringParser (s) {
+  var quoteParser = isChar('"')
+  var rSolidusParser = isChar('\'')
+  var solidusParser = isChar('/')
+  var backspaceParser = isChar('\b')
+  var formfeedParser = isChar('\f')
+  var newlineParser = isChar('\n')
+  var crParser = isChar('\r')
+  var htabParser = isChar('\r')
+  var tabParser = isChar('\t')
+  var parsed = ''
+  var ind = 0
+  var remainingString = s.slice(ind)
+  var quotesParsed = 0
+
+  if (ind === 0) {
+    var initC = quoteParser(s)
+    if (initC === null) {
+      return null
+    } else parsed += initC[0]
+  }
+  quotesParsed++
+  ind++
+  remainingString = s.slice(ind)
+
+  while (true) {
+    console.log(parsed)
+    if (quotesParsed === 2) return [parsed, remainingString]
+    break
+  }
 }
