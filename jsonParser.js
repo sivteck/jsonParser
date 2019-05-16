@@ -164,12 +164,40 @@ function manyParser (inp, parseF) {
   else return null
 }
 
+// isChar :: Char -> Parser Char
 function isChar (c) {
   function charParser (s) {
     if (s[0] === c) return [c, s.slice(1)]
-    else return null
+    else return [['', s]]
   }
   return charParser
+}
+
+// result :: a -> Parser a
+function result (c) {
+  return s => [[c, s]]
+}
+
+// zero :: Parser a
+function zero (c) {
+  return x => []
+}
+
+// item :: Parser Char
+function item (s) {
+  if (!s.length) return []
+  else return [[s[0], s.slice(1)]]
+}
+
+// bind :: Parser a -> (a -> Parser b) -> Parser b
+function bind (p, f) {
+  function boundP (inp) {
+    var remS = inp
+    var resP = []
+    for (var i = 0; i < s.length; i++) {
+      var after_p = p(remS)
+    }
+  }
 }
 
 function stringParser (s) {
