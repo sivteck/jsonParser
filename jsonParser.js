@@ -78,9 +78,6 @@ function pickFuncs (currState, loc) {
 
   for (var i = 0; i < currState.length; i++) {
     if (currState[i] !== null) {
-      // console.log('From pickFuncs()')
-      // console.log(currState)
-
       return afterFuncs[i]
     }
   }
@@ -168,7 +165,7 @@ function manyParser (inp, parseF) {
 function isChar (c) {
   function charParser (s) {
     if (s[0] === c) return [c, s.slice(1)]
-    else return [['', s]]
+    else return null
   }
   return charParser
 }
@@ -194,40 +191,97 @@ function bind (p, f) {
   function boundP (inp) {
     var remS = inp
     var resP = []
-    for (var i = 0; i < s.length; i++) {
-      var after_p = p(remS)
-    }
   }
 }
 
 function stringParser (s) {
-  var quoteParser = isChar('"')
-  var rSolidusParser = isChar('\'')
-  var solidusParser = isChar('/')
-  var backspaceParser = isChar('\b')
-  var formfeedParser = isChar('\f')
-  var newlineParser = isChar('\n')
-  var crParser = isChar('\r')
-  var htabParser = isChar('\r')
-  var tabParser = isChar('\t')
+  const justQuoteP = isChar('"')
+  const quoteParser = isChar('\\"')
+  const rSolidusParser = isChar('\\')
+  const solidusParser = isChar('/')
+  const backspaceParser = isChar('\b')
+  const formfeedParser = isChar('\f')
+  const newlineParser = isChar('\n')
+  const crParser = isChar('\r')
+  const htabParser = isChar('\r')
+  const tabParser = isChar('\t')
+
+  const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser, tabParser]
+
+  function applyParsers (s) {
+    for (var i = 0; i < specialParsers.length; i++) {
+      var aresP = specialParsers[i](s)
+      if (aresP !== null) return aresP
+    }
+    return null
+  }
+
   var parsed = ''
   var ind = 0
   var remainingString = s.slice(ind)
   var quotesParsed = 0
 
   if (ind === 0) {
-    var initC = quoteParser(s)
+    var initC = justQuoteP(s)
     if (initC === null) {
       return null
     } else parsed += initC[0]
   }
   quotesParsed++
   ind++
-  remainingString = s.slice(ind)
 
   while (true) {
-    console.log(parsed)
+    remainingString = s.slice(ind)
+    console.log([parsed, remainingString])
     if (quotesParsed === 2) return [parsed, remainingString]
-    break
+    var qRes = justQuoteP(remainingString)
+    if (qRes !== null) {
+      quotesParsed++
+      parsed += qRes[0]
+    }
+    if (rSolidusParser(s) !== null) {
+      var resP = applyParsers(remainingString.slice(ind))
+      if (resP === null) return null
+      else {
+        parsed += resP[0]
+        ind++
+      }
+    } else if (qRes === null) parsed += remainingString[0]
+    ind++
   }
 }
+
+var path = require('path')
+var fs = require('fs')
+
+function getFiles (dirName) {
+  var dirPath = path.join(dirName)
+  var fileL = fs.readdirSync(dirPath)
+  fileL = fileL.map(file => path.join('./test/', file))
+  return fileL
+}
+
+function readFile (fileNum) {
+  var dirName = './test'
+  var files = getFiles(dirName)
+  return [files[fileNum - 1], fs.readFileSync(files[fileNum - 1])]
+}
+
+function testInfo (fileNum) {
+  var [fileName, fileContent] = readFile(fileNum)
+  console.log('=======FILENAME=======================')
+  console.log(fileName)
+  console.log('=======FILE CONTENT (STRING)==========')
+  console.log(String(fileContent))
+  console.log('=======FILE CONTENT (RAW)=============')
+  console.log(fileContent)
+  console.log('=======IS VALID JSON?=================')
+  console.log('=======PARSED JSON====================')
+  console.log('\n')
+}
+
+// var count = getFiles('./test').length
+//
+// for (let j = 0; j < count; j++) {
+//   testInfo(j + 1)
+// }
