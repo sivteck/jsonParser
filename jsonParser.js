@@ -110,8 +110,10 @@ function numberParser (s) {
     if (transitionF !== null) state = applyFuncs(transitionF, remainingString)
     else if (transitionF === null) return [parsed * 1, remainingString]
     // State after applying Functions
-    if (state === null && ind !== 0) return [parsed * 1, remainingString]
-    else if (state === null && ind === 0) return null
+    if (state === null && ind !== 0) {
+      if (isNaN(parsed * 1)) return null
+      return [parsed * 1, remainingString]
+    } else if (state === null && ind === 0) return null
 
     var [v, rest] = getResult(state)
     if ((ind < 2) && (isZero(v) !== null)) startZeroesParsed++
@@ -133,6 +135,7 @@ function numberParser (s) {
 
     // Check and return parsed string if there is unwanted "e/E/+/-/."
     if ((expParsed > 1) || (signParsed > 2) || (decimalPointsParsed > 1)) {
+      if (isNaN(parsed * 1)) return null
       return [parsed * 1, v + rest]
     }
     // Check and return parsed string if "." occures after "e/E"
@@ -140,7 +143,10 @@ function numberParser (s) {
     parsed += v
     ind++
     remainingString = rest
-    if (remainingString.length === 0) return [parsed * 1, '']
+    if (remainingString.length === 0) {
+      if (isNaN(parsed * 1)) return null
+      return [parsed * 1, '']
+    }
   }
 }
 
@@ -193,6 +199,17 @@ function bind (p, f) {
   }
 }
 
+function unicodeParser (s) {
+  const unicodeParse = isChar('u')
+  if (unicodeParse(s) != null) {
+    for (let i = 0; i < 4; i++) {
+      if (numberParser(s.slice(i + 1)) != null) continue
+      else return null
+    }
+  }
+  return [s.slice(0, 4), s.slice(4)]
+}
+
 function stringParser (s) {
   const justQuoteP = isChar('"')
   const quoteParser = isChar('\\"')
@@ -204,7 +221,7 @@ function stringParser (s) {
   const crParser = isChar('r')
   const htabParser = isChar('t')
 
-  const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser]
+  const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser, unicodeParser]
 
   function applyParsers (s) {
     for (var i = 0; i < specialParsers.length; i++) {
