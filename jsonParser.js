@@ -163,11 +163,10 @@ function manyParser (inp, parseF) {
 
 // isChar :: Char -> Parser Char
 function isChar (c) {
-  function charParser (s) {
+  return function charParser (s) {
     if (s[0] === c) return [c, s.slice(1)]
     else return null
   }
-  return charParser
 }
 
 // result :: a -> Parser a
@@ -199,14 +198,13 @@ function stringParser (s) {
   const quoteParser = isChar('\\"')
   const rSolidusParser = isChar('\\')
   const solidusParser = isChar('/')
-  const backspaceParser = isChar('\b')
-  const formfeedParser = isChar('\f')
-  const newlineParser = isChar('\n')
-  const crParser = isChar('\r')
-  const htabParser = isChar('\r')
-  const tabParser = isChar('\t')
+  const backspaceParser = isChar('b')
+  const formfeedParser = isChar('f')
+  const newlineParser = isChar('n')
+  const crParser = isChar('r')
+  const htabParser = isChar('t')
 
-  const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser, tabParser]
+  const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser]
 
   function applyParsers (s) {
     for (var i = 0; i < specialParsers.length; i++) {
@@ -225,22 +223,25 @@ function stringParser (s) {
     var initC = justQuoteP(s)
     if (initC === null) {
       return null
-    } else parsed += initC[0]
+    } // else parsed += initC[0]
   }
   quotesParsed++
   ind++
 
   while (true) {
     remainingString = s.slice(ind)
-    console.log([parsed, remainingString])
+    // console.log([parsed, remainingString])
     if (quotesParsed === 2) return [parsed, remainingString]
     var qRes = justQuoteP(remainingString)
     if (qRes !== null) {
       quotesParsed++
-      parsed += qRes[0]
+      // parsed += qRes[0]
     }
-    if (rSolidusParser(s) !== null) {
-      var resP = applyParsers(remainingString.slice(ind))
+    // console.log(rSolidusParser(remainingString))
+    if (rSolidusParser(remainingString) !== null) {
+      var resP = applyParsers(remainingString.slice(ind + 1))
+      // console.log('Special Parsers applied result')
+      // console.log(resP)
       if (resP === null) return null
       else {
         parsed += resP[0]
@@ -257,12 +258,12 @@ var fs = require('fs')
 function getFiles (dirName) {
   var dirPath = path.join(dirName)
   var fileL = fs.readdirSync(dirPath)
-  fileL = fileL.map(file => path.join('./test/', file))
+  fileL = fileL.map(file => path.join(dirName, file))
   return fileL
 }
 
 function readFile (fileNum) {
-  var dirName = './test'
+  var dirName = './testParsers'
   var files = getFiles(dirName)
   return [files[fileNum - 1], fs.readFileSync(files[fileNum - 1])]
 }
