@@ -249,7 +249,7 @@ function stringParser (s) {
 }
 
 function consumeSpaces (s) {
-  while (s[0] === ' ') {
+  while (s[0] === ' ' || s[0] === '\n') {
     s = s.slice(1)
   }
   return s
@@ -257,7 +257,7 @@ function consumeSpaces (s) {
 
 function arrayParser (s) {
   if (s[0] !== '[') return null
-  const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser]
+  const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
   s = consumeSpaces(s.slice(1))
   let arrR = []
   while (true) {
@@ -277,18 +277,42 @@ function arrayParser (s) {
 }
 
 function valueParser (s) {
-  const parsers = [stringParser, numberParser, nullParser, booleanParser]
+  const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
   s = consumeSpaces(s)
   for (let i = 0; i < parsers.length; i++) {
     var resHLP = parsers[i](s)
     if (resHLP !== null) return resHLP
   }
-
   return null
 }
 
 function objectParser (s) {
-
+  if (s[0] !== '{') return null
+  let objR = {}
+  s = consumeSpaces(s.slice(1))
+  while (true) {
+    if (s[0] === '}') return [objR, s.slice(1)]
+    let key = stringParser(s)
+    console.log('====String====')
+    console.log(s)
+    console.log('===After Parsing===')
+    console.log(key)
+    if (key === null) return null
+    let remS = key[1]
+    s = consumeSpaces(remS)
+    if (s[0] !== ':') return null
+    s = consumeSpaces(s.slice(1))
+    console.log('==========after truncating :===')
+    console.log(s)
+    let value = valueParser(s)
+    console.log('===After Value Parsing===')
+    console.log(value)
+    if (value === null) return null
+    objR[key[0]] = value[0]
+    s = consumeSpaces(value[1])
+    if (s[0] === ',') s = s.slice(1)
+    s = consumeSpaces(s)
+  }
 }
 
 var path = require('path')
