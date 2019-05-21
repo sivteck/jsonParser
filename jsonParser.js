@@ -175,30 +175,6 @@ function isChar (c) {
   }
 }
 
-// result :: a -> Parser a
-function result (c) {
-  return s => [[c, s]]
-}
-
-// zero :: Parser a
-function zero (c) {
-  return x => []
-}
-
-// item :: Parser Char
-function item (s) {
-  if (!s.length) return []
-  else return [[s[0], s.slice(1)]]
-}
-
-// bind :: Parser a -> (a -> Parser b) -> Parser b
-function bind (p, f) {
-  function boundP (inp) {
-    var remS = inp
-    var resP = []
-  }
-}
-
 function unicodeParser (s) {
   const unicodeParse = isChar('u')
   let uPR = unicodeParse(s)
@@ -226,14 +202,8 @@ function stringParser (s) {
   const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser, unicodeParser]
 
   function applyParsers (s) {
-    console.log('=====Parsing Character====')
-    console.log(s[0])
     for (var i = 0; i < specialParsers.length; i++) {
-      console.log('Applying Parser No.:')
-      console.log(i)
       let aresP = specialParsers[i](s)
-      console.log('===Parsing Result====')
-      console.log(aresP)
       if (aresP !== null) return aresP
     }
     return null
@@ -248,57 +218,49 @@ function stringParser (s) {
     var initC = justQuoteP(s)
     if (initC === null) {
       return null
-    } // else parsed += initC[0]
+    } 
   }
   quotesParsed++
   ind++
 
   while (true) {
     remainingString = s.slice(ind)
-    // console.log([parsed, remainingString])
     if (quotesParsed === 2) return [parsed, remainingString]
-    // console.log(rSolidusParser(remainingString))
     let checkBackslash = rSolidusParser(remainingString)
     if (checkBackslash !== null) {
-      console.log('Length of remaining string: ' + remainingString.length)
-      console.log('Applying Parsers to index: ' + ind)
       let resP = applyParsers(remainingString.slice(1))
-      // console.log('Special Parsers applied result')
-      // console.log(resP)
 
-      console.log('---Remaining String---')
-      console.log(remainingString)
-      console.log('Result of Parser')
-      console.log(resP)
       if (resP === null) return null
       else {
         parsed += checkBackslash[0]
         parsed += resP[0]
-        console.log('==Parser==')
-        console.log(parsed)
         remainingString = resP[1]
-        console.log('ind before')
-        console.log(ind)
-        console.log('=======Remaining String=========')
-        console.log(remainingString)
         if (resP[0].length > 1) ind += (resP[0].length + 1)
         else ind++
-        console.log('==ind after += resP[0].lengt==')
-        console.log(ind)
       }
     }
-    console.log('---before justquote===')
-    console.log(remainingString)
     var qRes = justQuoteP(remainingString)
-    console.log('---JustQuote Result===')
-    console.log(qRes)
     if (qRes !== null) {
       quotesParsed++
-      // parsed += qRes[0]
     }
     ind++
     if (qRes === null) parsed += remainingString[0]
   }
+}
+
+function consumeSpaces (s) {
+  while (s[0] === ' ' && s.length !== 0) {
+    s = s.slice(1)
+  }
+  return s
+}
+
+function arrayParser (s) {
+
+}
+
+function valueParser (s) {
+
 }
 
 var path = require('path')
