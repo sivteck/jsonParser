@@ -266,13 +266,13 @@ function stringParser (s) {
       // console.log('Special Parsers applied result')
       // console.log(resP)
 
-      // parsed += checkBackslash[0]
       console.log('---Remaining String---')
       console.log(remainingString)
       console.log('Result of Parser')
       console.log(resP)
       if (resP === null) return null
       else {
+        parsed += checkBackslash[0]
         parsed += resP[0]
         console.log('==Parser==')
         console.log(parsed)
