@@ -218,7 +218,7 @@ function stringParser (s) {
     var initC = justQuoteP(s)
     if (initC === null) {
       return null
-    } 
+    }
   }
   quotesParsed++
   ind++
@@ -249,17 +249,45 @@ function stringParser (s) {
 }
 
 function consumeSpaces (s) {
-  while (s[0] === ' ' && s.length !== 0) {
+  while (s[0] === ' ') {
     s = s.slice(1)
   }
   return s
 }
 
 function arrayParser (s) {
-
+  if (s[0] !== '[') return null
+  const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser]
+  s = consumeSpaces(s.slice(1))
+  let arrR = []
+  while (true) {
+    for (let i = 0; i < parsers.length; i++) {
+      var resHLP = parsers[i](s)
+      console.log(s)
+      if (resHLP !== null) {
+        arrR.push(resHLP[0])
+        break
+      }
+    }
+    if (resHLP === null) return null
+    s = consumeSpaces(resHLP[1])
+    if (s[0] === ']') return [arrR, s.slice(1)]
+    if (s[0] === ',') s = s.slice(1)
+  }
 }
 
 function valueParser (s) {
+  const parsers = [stringParser, numberParser, nullParser, booleanParser]
+  s = consumeSpaces(s)
+  for (let i = 0; i < parsers.length; i++) {
+    var resHLP = parsers[i](s)
+    if (resHLP !== null) return resHLP
+  }
+
+  return null
+}
+
+function objectParser (s) {
 
 }
 
