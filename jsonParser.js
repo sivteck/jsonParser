@@ -24,9 +24,7 @@ function isNegative (inp) {
 
 function isDigit (inp) {
   var codeC = inp[0].charCodeAt()
-  if ((codeC >= 48) && (codeC <= 57)) {
-    return [inp[0], inp.slice(1)]
-  } else return null
+  if ((codeC >= 48) && (codeC <= 57)) { return [inp[0], inp.slice(1)] } else return null
 }
 
 function isDecimalPoint (inp) {
@@ -273,6 +271,7 @@ function arrayParser (s) {
     s = consumeSpaces(resHLP[1])
     if (s[0] === ']') return [arrR, s.slice(1)]
     if (s[0] === ',') s = s.slice(1)
+    s = consumeSpaces(s)
   }
 }
 
@@ -291,6 +290,7 @@ function objectParser (s) {
   let objR = {}
   s = consumeSpaces(s.slice(1))
   while (true) {
+    console.log(objR)
     if (s[0] === '}') return [objR, s.slice(1)]
     let key = stringParser(s)
     console.log('====String====')
