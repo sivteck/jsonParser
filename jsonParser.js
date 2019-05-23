@@ -155,13 +155,18 @@ function isChar (c) {
   }
 }
 
+function hexParser (s) {
+  if (numberParser(s) != null) return numberParser(s)
+  let fChar = s[0]
+  if (fChar >= 97 || fChar <= 102 || fChar >= 65 || fChar <= 70) { return [fChar, s.slice(1)] } else return null
+}
+
 function unicodeParser (s) {
   const unicodeParse = isChar('u')
   let uPR = unicodeParse(s)
   if (uPR === null) return null
   for (let i = 0; i < 4; i++) {
-    // TODO: fix for unicode >9999
-    if (numberParser(s.slice(i + 1)) != null) continue
+    if (hexParser(s.slice(i + 1)) != null) continue
     else return null
   }
   return [s.slice(0, 5), s.slice(6)]
