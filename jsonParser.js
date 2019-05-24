@@ -1,3 +1,5 @@
+const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
+
 function nullParser (s) {
   if (!s.startsWith('null')) return null
   return [null, s.slice(4)]
@@ -241,7 +243,6 @@ function consumeSpaces (s) {
 
 function arrayParser (s) {
   if (s[0] !== '[') return null
-  const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
   s = consumeSpaces(s.slice(1))
   let arrR = []
   while (true) {
@@ -261,7 +262,6 @@ function arrayParser (s) {
 }
 
 function valueParser (s) {
-  const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
   s = consumeSpaces(s)
   for (let i = 0; i < parsers.length; i++) {
     let resHLP = parsers[i](s)
@@ -289,6 +289,12 @@ function objectParser (s) {
     if (s[0] === ',') s = s.slice(1)
     s = consumeSpaces(s)
   }
+}
+
+function factoryParser (s) {
+  let parseResult = valueParser(s)[0]
+  if (parseResult !== null) return parseResult[0]
+  else return null
 }
 
 const path = require('path')
