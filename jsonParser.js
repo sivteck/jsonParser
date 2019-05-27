@@ -108,6 +108,7 @@ function numberParser (s) {
   let startZeroesParsed = 0
   let decimalPointsParsed = 0
 
+  // Handle single occurence of zero
   if (s[0] === '0') {
     let tempR = consumeSpaces(s.slice(1))
     if (tempR[0] === ',' || tempR[0] === '}' || tempR[0] === ']') return [s[0] * 1, tempR]
