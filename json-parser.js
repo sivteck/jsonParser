@@ -1,3 +1,6 @@
+const path = require('path')
+const fs = require('fs')
+
 const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
 
 function nullParser (s) {
@@ -124,6 +127,7 @@ function numberParser (s) {
       if (isNaN(parsed * 1)) return null
       return [parsed * 1, remainingString]
     } else if (state === null && ind === 0) return null
+    // using var here for code brevity
     var [v, rest] = getResult(state)
     if ((ind < 1) && (isZero(v) !== null)) {
       startZeroesParsed++
@@ -145,7 +149,6 @@ function numberParser (s) {
     // Check and return parsed string if there is unwanted "e/E/+/-/."
     if ((expParsed > 1) || (signParsed > 2) || (decimalPointsParsed > 1)) {
       if (isNaN(parsed * 1)) return null
-      // return [parsed * 1, v + rest]
     }
     // Check and return parsed string if "." occures after "e/E"
     if (expParsed > 1 && v === '.') return [parsed * 1, v + rest]
@@ -228,10 +231,10 @@ function stringParser (s) {
       else return [parsed, remainingString]
     }
     let iniC = remainingString[0]
+    // Handle special characters that are not escaped
     if (iniC === '\n' || iniC === '\t' || iniC === '\r' || iniC === '\f' || iniC === '\b' || iniC === '\b') return null
     let checkBackslash = rSolidusParser(remainingString)
     if (checkBackslash !== null) {
-      //      if (remainingString.length === 1) return [checkBackslash[0], '']
       let resP = applyParsers(remainingString.slice(1))
       flagQ = 1
       if (resP === null) return null
@@ -325,15 +328,14 @@ function objectParser (s) {
 }
 
 function factoryParser (s) {
-  let parseResult = valueParser(s)
-  if (parseResult !== null) {
-    if (parseResult[1].length > 0 && parseResult[1][0] !== '\n') return null
-    else return parseResult[0]
-  } else return null
+  return s => {
+    let parseResult = valueParser(s)
+    if (parseResult !== null) {
+      if (parseResult[1].length > 0 && parseResult[1][0] !== '\n') return null
+      else return parseResult[0]
+    } else return null
+  }
 }
-
-const path = require('path')
-const fs = require('fs')
 
 function getFiles (dirName) {
   let dirPath = path.join(dirName)
