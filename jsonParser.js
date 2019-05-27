@@ -167,28 +167,20 @@ function isChar (c) {
 }
 
 function hexParser (s) {
-  // if (numberParser(s) != null) return numberParser(s)
   let fChar = s[0].charCodeAt()
   if (((fChar >= 48) && (fChar <= 57)) || fChar >= 97 || fChar <= 102 || fChar >= 65 || fChar <= 70) { return [fChar, s.slice(1)] } else return null
 }
 
 function unicodeParser (s) {
-  // console.log('=================from unicode parser===================')
-  // console.log(s)
   if (s[0] === '\\') s = s.slice(1)
   const unicodeParse = isChar('u')
   let uPR = unicodeParse(s)
-  // console.log(uPR)
   if (uPR === null) return null
   for (let i = 0; i < 4; i++) {
-    // console.log('======== inside hex parser =======')
     if (hexParser(s.slice(i + 1)) != null) {
-      // console.log(i + 1)
-      // console.log(hexParser(s.slice(i + 1)))
       continue
     } else return null
   }
-  // console.log([s.slice(0, 5), s.slice(5)])
   return [s.slice(0, 5), s.slice(5)]
 }
 
@@ -236,7 +228,7 @@ function stringParser (s) {
     }
     let checkBackslash = rSolidusParser(remainingString)
     if (checkBackslash !== null) {
-      var resP = applyParsers(remainingString.slice(1))
+      let resP = applyParsers(remainingString.slice(1))
       flagQ = 1
       if (resP === null) return null
       else {
@@ -248,10 +240,6 @@ function stringParser (s) {
         if (quotesParsed === 2) quotesParsed -= 1
       }
     } else flagQ = 0
-    // console.log('======= From string parser ========')
-    // console.log(flagQ)
-    // console.log(quotesParsed)
-    // console.log(resP)
 
     let qRes = justQuoteP(remainingString)
     if (qRes !== null) {
@@ -274,8 +262,6 @@ function arrayParser (s) {
   s = consumeSpaces(s.slice(1))
   let arrR = []
   while (true) {
-    // console.log('=========From Array Processor===========')
-    // console.log(s)
     if (s[0] === ']') return [arrR, s.slice(1)]
     for (let i = 0; i < parsers.length; i++) {
       var resHLP = parsers[i](s)
@@ -301,8 +287,6 @@ function valueParser (s) {
   s = consumeSpaces(s)
   for (let i = 0; i < parsers.length; i++) {
     let resHLP = parsers[i](s)
-    // console.log('========From valueParser=========')
-    // console.log(resHLP)
     if (resHLP !== null) return resHLP
   }
   return null
@@ -314,9 +298,6 @@ function objectParser (s) {
   let objR = {}
   s = consumeSpaces(s.slice(1))
   while (true) {
-    // console.log('============from object parser============')
-    // console.log(s)
-    // console.log(objR)
     s = consumeSpaces(s)
     if (s[0] === '}') return [objR, s.slice(1)]
     let key = stringParser(s)
@@ -325,11 +306,7 @@ function objectParser (s) {
     s = consumeSpaces(remS)
     if (s[0] !== ':') return null
     s = consumeSpaces(s.slice(1))
-    // console.log('======Value Parser inside Object======')
-    // console.log(valueParser(s))
     let value = valueParser(s)
-    // console.log('---------value parser result in obj parser=======')
-    // console.log(value)
     if (value === null) return null
     objR[key[0]] = value[0]
     s = consumeSpaces(value[1])
