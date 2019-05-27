@@ -24,6 +24,7 @@ function isNegative (inp) {
 }
 
 function isDigit (inp) {
+  if (inp[0] === undefined) return null
   let codeC = inp[0].charCodeAt()
   if ((codeC >= 48) && (codeC <= 57)) {
     return [inp[0], inp.slice(1)]
@@ -31,6 +32,7 @@ function isDigit (inp) {
 }
 
 function isDecimalPoint (inp) {
+  if (inp[0] === undefined) return null
   let codeC = inp[0]
   if (codeC === '.') {
     return [codeC, inp.slice(1)]
@@ -55,7 +57,7 @@ function returnsNull (inp) {
 }
 
 // Transition Functions
-const funcs = [isNegative, isZero, isDigit, returnsNull, returnsNull]
+const initFuncs = [isNegative, isZero, isDigit, returnsNull, returnsNull]
 const afterSigned = [returnsNull, isZero, isDigit, returnsNull, returnsNull]
 const afterZero = [returnsNull, returnsNull, returnsNull, isDecimalPoint, returnsNull]
 const afterDigit = [returnsNull, returnsNull, isDigit, isDecimalPoint, isExponential]
@@ -76,7 +78,7 @@ function applyFuncs (arrF, inpS) {
 }
 
 function pickFuncs (currState, loc) {
-  if (loc === 0) return funcs
+  if (loc === 0) return initFuncs
 
   for (let i = 0; i < currState.length; i++) {
     if (currState[i] !== null) {
@@ -96,7 +98,7 @@ function getResult (arrR) {
 }
 
 function numberParser (s) {
-  let state = new Array(funcs.length).fill(null)
+  let state = new Array(initFuncs.length).fill(null)
 
   let parsed = ''
   let ind = 0
@@ -105,6 +107,11 @@ function numberParser (s) {
   let signParsed = 0
   let startZeroesParsed = 0
   let decimalPointsParsed = 0
+
+  if (s[0] === '0') {
+    let tempR = consumeSpaces(s.slice(1))
+    if (tempR[0] === ',') return [s[0] * 1, tempR]
+  }
 
   while (true) {
     // Pick transition functions based on state
@@ -117,7 +124,9 @@ function numberParser (s) {
       return [parsed * 1, remainingString]
     } else if (state === null && ind === 0) return null
     var [v, rest] = getResult(state)
-    if ((ind < 2) && (isZero(v) !== null)) startZeroesParsed++
+    if ((ind < 1) && (isZero(v) !== null)) {
+      startZeroesParsed++
+    }
     // Handle recurring "E/e"
     if (isExponential(remainingString)) expParsed++
     // Handle recurring "+/-"
@@ -135,14 +144,14 @@ function numberParser (s) {
     // Check and return parsed string if there is unwanted "e/E/+/-/."
     if ((expParsed > 1) || (signParsed > 2) || (decimalPointsParsed > 1)) {
       if (isNaN(parsed * 1)) return null
-      return [parsed * 1, v + rest]
+      // return [parsed * 1, v + rest]
     }
     // Check and return parsed string if "." occures after "e/E"
     if (expParsed > 1 && v === '.') return [parsed * 1, v + rest]
     parsed += v
-    ind++
+    ind += 2
     remainingString = rest
-    if (remainingString.length === 0) {
+    if (remainingString.length === 0 || remainingString === '0') {
       if (isNaN(parsed * 1)) return null
       return [parsed * 1, '']
     }
@@ -158,20 +167,29 @@ function isChar (c) {
 }
 
 function hexParser (s) {
-  if (numberParser(s) != null) return numberParser(s)
-  let fChar = s[0]
-  if (fChar >= 97 || fChar <= 102 || fChar >= 65 || fChar <= 70) { return [fChar, s.slice(1)] } else return null
+  // if (numberParser(s) != null) return numberParser(s)
+  let fChar = s[0].charCodeAt()
+  if (((fChar >= 48) && (fChar <= 57)) || fChar >= 97 || fChar <= 102 || fChar >= 65 || fChar <= 70) { return [fChar, s.slice(1)] } else return null
 }
 
 function unicodeParser (s) {
+  // console.log('=================from unicode parser===================')
+  // console.log(s)
+  if (s[0] === '\\') s = s.slice(1)
   const unicodeParse = isChar('u')
   let uPR = unicodeParse(s)
+  // console.log(uPR)
   if (uPR === null) return null
   for (let i = 0; i < 4; i++) {
-    if (hexParser(s.slice(i + 1)) != null) continue
-    else return null
+    // console.log('======== inside hex parser =======')
+    if (hexParser(s.slice(i + 1)) != null) {
+      // console.log(i + 1)
+      // console.log(hexParser(s.slice(i + 1)))
+      continue
+    } else return null
   }
-  return [s.slice(0, 5), s.slice(6)]
+  // console.log([s.slice(0, 5), s.slice(5)])
+  return [s.slice(0, 5), s.slice(5)]
 }
 
 function stringParser (s) {
@@ -185,7 +203,7 @@ function stringParser (s) {
   const crParser = isChar('r')
   const htabParser = isChar('t')
 
-  const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser, unicodeParser]
+  const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser, unicodeParser, rSolidusParser]
 
   function applyParsers (s) {
     for (let i = 0; i < specialParsers.length; i++) {
@@ -208,23 +226,33 @@ function stringParser (s) {
   }
   quotesParsed++
   ind++
+  let flagQ = 0
 
   while (true) {
     remainingString = s.slice(ind)
-    if (quotesParsed === 2) return [parsed, remainingString]
+    if (quotesParsed === 2) {
+      if (flagQ === 1) flagQ -= 1
+      else return [parsed, remainingString]
+    }
     let checkBackslash = rSolidusParser(remainingString)
     if (checkBackslash !== null) {
-      let resP = applyParsers(remainingString.slice(1))
-
+      var resP = applyParsers(remainingString.slice(1))
+      flagQ = 1
       if (resP === null) return null
       else {
         parsed += checkBackslash[0]
         parsed += resP[0]
         remainingString = resP[1]
         if (resP[0].length > 1) ind += (resP[0].length + 1)
-        else ind++
+        else ind += 2
+        if (quotesParsed === 2) quotesParsed -= 1
       }
-    }
+    } else flagQ = 0
+    // console.log('======= From string parser ========')
+    // console.log(flagQ)
+    // console.log(quotesParsed)
+    // console.log(resP)
+
     let qRes = justQuoteP(remainingString)
     if (qRes !== null) {
       quotesParsed++
@@ -235,7 +263,7 @@ function stringParser (s) {
 }
 
 function consumeSpaces (s) {
-  while (s[0] === ' ' || s[0] === '\n') {
+  while (s[0] === ' ' || s[0] === '\n' || s[0] === '\r' || s[0] === '\f') {
     s = s.slice(1)
   }
   return s
@@ -246,6 +274,9 @@ function arrayParser (s) {
   s = consumeSpaces(s.slice(1))
   let arrR = []
   while (true) {
+    // console.log('=========From Array Processor===========')
+    // console.log(s)
+    if (s[0] === ']') return [arrR, s.slice(1)]
     for (let i = 0; i < parsers.length; i++) {
       var resHLP = parsers[i](s)
       if (resHLP !== null) {
@@ -256,7 +287,12 @@ function arrayParser (s) {
     if (resHLP === null) return null
     s = consumeSpaces(resHLP[1])
     if (s[0] === ']') return [arrR, s.slice(1)]
-    if (s[0] === ',') s = s.slice(1)
+    if (s[0] === ',') {
+      s = s.slice(1)
+      s = consumeSpaces(s)
+      // Check if it is extra comma
+      if (s[0] === ']') return null
+    }
     s = consumeSpaces(s)
   }
 }
@@ -265,16 +301,23 @@ function valueParser (s) {
   s = consumeSpaces(s)
   for (let i = 0; i < parsers.length; i++) {
     let resHLP = parsers[i](s)
+    // console.log('========From valueParser=========')
+    // console.log(resHLP)
     if (resHLP !== null) return resHLP
   }
   return null
 }
 
 function objectParser (s) {
+  s = consumeSpaces(s)
   if (s[0] !== '{') return null
   let objR = {}
   s = consumeSpaces(s.slice(1))
   while (true) {
+    // console.log('============from object parser============')
+    // console.log(s)
+    // console.log(objR)
+    s = consumeSpaces(s)
     if (s[0] === '}') return [objR, s.slice(1)]
     let key = stringParser(s)
     if (key === null) return null
@@ -282,19 +325,30 @@ function objectParser (s) {
     s = consumeSpaces(remS)
     if (s[0] !== ':') return null
     s = consumeSpaces(s.slice(1))
+    // console.log('======Value Parser inside Object======')
+    // console.log(valueParser(s))
     let value = valueParser(s)
+    // console.log('---------value parser result in obj parser=======')
+    // console.log(value)
     if (value === null) return null
     objR[key[0]] = value[0]
     s = consumeSpaces(value[1])
-    if (s[0] === ',') s = s.slice(1)
+    if (s[0] === ',') {
+      s = s.slice(1)
+      s = consumeSpaces(s)
+      // Check if it is extra comma
+      if (s[0] === '}') return null
+    }
     s = consumeSpaces(s)
   }
 }
 
 function factoryParser (s) {
-  let parseResult = valueParser(s)[0]
-  if (parseResult !== null) return parseResult[0]
-  else return null
+  let parseResult = valueParser(s)
+  if (parseResult !== null) {
+    if (parseResult[1].length > 0 && parseResult[1][0] !== '\n') return null
+    else return parseResult[0]
+  } else return null
 }
 
 const path = require('path')
@@ -308,26 +362,29 @@ function getFiles (dirName) {
 }
 
 function readFile (fileNum) {
-  let dirName = './testParsers'
+  let dirName = './test'
   let files = getFiles(dirName)
   return [files[fileNum - 1], fs.readFileSync(files[fileNum - 1])]
 }
 
 function testInfo (fileNum) {
   let [fileName, fileContent] = readFile(fileNum)
-  console.log('=======FILENAME=======================')
-  console.log(fileName)
-  console.log('=======FILE CONTENT (STRING)==========')
-  console.log(String(fileContent))
-  console.log('=======FILE CONTENT (RAW)=============')
-  console.log(fileContent)
+  let mess = String.raw`
+  ==Filename=====: ${fileName}
+  ==FileContent==: ${String(fileContent)}`
+  console.log(mess)
+
   console.log('=======IS VALID JSON?=================')
+  let parsed = factoryParser(String(fileContent))
+  if (parsed !== null) console.log('YES')
+  else console.log('NO')
   console.log('=======PARSED JSON====================')
+  console.log(parsed)
   console.log('\n')
 }
 
-// let count = getFiles('./test').length
-//
-// for (let j = 0; j < count; j++) {
-//   testInfo(j + 1)
-// }
+let count = getFiles('./test').length
+
+for (let j = 0; j < count; j++) {
+  testInfo(j + 1)
+}
