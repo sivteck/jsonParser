@@ -227,8 +227,11 @@ function stringParser (s) {
       if (flagQ === 1) flagQ -= 1
       else return [parsed, remainingString]
     }
+    let iniC = remainingString[0]
+    if (iniC === '\n' || iniC === '\t' || iniC === '\r' || iniC === '\f' || iniC === '\b' || iniC === '\b') return null
     let checkBackslash = rSolidusParser(remainingString)
     if (checkBackslash !== null) {
+      //      if (remainingString.length === 1) return [checkBackslash[0], '']
       let resP = applyParsers(remainingString.slice(1))
       flagQ = 1
       if (resP === null) return null
@@ -247,7 +250,7 @@ function stringParser (s) {
       quotesParsed++
     }
     ind++
-    if (qRes === null) parsed += remainingString[0]
+    if (qRes === null && remainingString.length !== 0) parsed += remainingString[0]
   }
 }
 
@@ -350,8 +353,8 @@ function testInfo (fileNum) {
   let mess = String.raw`
   ==Filename=====: ${fileName}
   ==FileContent==: ${String(fileContent)}`
-  console.log(mess.slice(0, 300))
 
+  console.log(mess.slice(0, 300))
   console.log('=======IS VALID JSON?=================')
   let parsed = factoryParser(String(fileContent))
   if (parsed !== null) console.log('YES')
