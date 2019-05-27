@@ -110,7 +110,7 @@ function numberParser (s) {
 
   if (s[0] === '0') {
     let tempR = consumeSpaces(s.slice(1))
-    if (tempR[0] === ',') return [s[0] * 1, tempR]
+    if (tempR[0] === ',' || tempR[0] === '}' || tempR[0] === ']') return [s[0] * 1, tempR]
   }
 
   while (true) {
@@ -349,7 +349,7 @@ function testInfo (fileNum) {
   let mess = String.raw`
   ==Filename=====: ${fileName}
   ==FileContent==: ${String(fileContent)}`
-  console.log(mess)
+  console.log(mess.slice(0, 300))
 
   console.log('=======IS VALID JSON?=================')
   let parsed = factoryParser(String(fileContent))
