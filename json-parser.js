@@ -358,7 +358,7 @@ function testInfo (fileNum) {
 
   console.log(mess.slice(0, 300))
   console.log('=======IS VALID JSON?=================')
-  let parsed = factoryParser(String(fileContent))
+  let parsed = valueParser(String(fileContent))
   if (parsed !== null) console.log('YES')
   else console.log('NO')
   console.log('=======PARSED JSON====================')
