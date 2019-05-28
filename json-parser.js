@@ -1,6 +1,5 @@
 const path = require('path')
 const fs = require('fs')
-
 const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
 
 function nullParser (s) {
@@ -82,20 +81,15 @@ function applyFuncs (arrF, inpS) {
 
 function pickFuncs (currState, loc) {
   if (loc === 0) return initFuncs
-
   for (let i = 0; i < currState.length; i++) {
-    if (currState[i] !== null) {
-      return afterFuncs[i]
-    }
+    if (currState[i] !== null) return afterFuncs[i]
   }
   return null
 }
 
 function getResult (arrR) {
   for (let i = 0; i < arrR.length; i++) {
-    if (arrR[i] != null) {
-      return arrR[i]
-    }
+    if (arrR[i] != null) return arrR[i]
   }
   return null
 }
@@ -129,9 +123,7 @@ function numberParser (s) {
     } else if (state === null && ind === 0) return null
     // using var here for code brevity
     var [v, rest] = getResult(state)
-    if ((ind < 1) && (isZero(v) !== null)) {
-      startZeroesParsed++
-    }
+    if ((ind < 1) && (isZero(v) !== null)) startZeroesParsed++
     // Handle recurring "E/e"
     if (isExponential(remainingString)) expParsed++
     // Handle recurring "+/-"
@@ -181,9 +173,8 @@ function unicodeParser (s) {
   let uPR = unicodeParse(s)
   if (uPR === null) return null
   for (let i = 0; i < 4; i++) {
-    if (hexParser(s.slice(i + 1)) != null) {
-      continue
-    } else return null
+    if (hexParser(s.slice(i + 1)) != null) continue
+    else return null
   }
   return [s.slice(0, 5), s.slice(5)]
 }
@@ -216,9 +207,7 @@ function stringParser (s) {
 
   if (ind === 0) {
     let initC = justQuoteP(s)
-    if (initC === null) {
-      return null
-    }
+    if (initC === null) return null
   }
   quotesParsed++
   ind++
@@ -239,7 +228,7 @@ function stringParser (s) {
       flagQ = 1
       if (resP === null) return null
       else {
-        parsed += checkBackslash[0]
+        // parsed += checkBackslash[0]
         parsed += resP[0]
         remainingString = resP[1]
         if (resP[0].length > 1) ind += (resP[0].length + 1)
@@ -249,9 +238,7 @@ function stringParser (s) {
     } else flagQ = 0
 
     let qRes = justQuoteP(remainingString)
-    if (qRes !== null) {
-      quotesParsed++
-    }
+    if (qRes !== null) quotesParsed++
     ind++
     if (qRes === null && remainingString.length !== 0) parsed += remainingString[0]
   }
@@ -359,10 +346,16 @@ function testInfo (fileNum) {
   console.log(mess.slice(0, 300))
   console.log('=======IS VALID JSON?=================')
   let parsed = valueParser(String(fileContent))
-  if (parsed !== null) console.log('YES')
-  else console.log('NO')
-  console.log('=======PARSED JSON====================')
-  console.log(parsed)
+  if (parsed !== null) {
+    let s = consumeSpaces(parsed[1])
+    if (s.length > 0) {
+      console.log('NO')
+      return
+    }
+    console.log('YES')
+    console.log('=======PARSED JSON====================')
+    console.log(JSON.stringify(parsed[0]))
+  } else console.log('NO')
   console.log('\n')
 }
 
