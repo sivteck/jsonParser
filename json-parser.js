@@ -1,6 +1,8 @@
 const path = require('path')
 const fs = require('fs')
 const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
+const specialChars = ['"', '\\', '/', 'b', 'f', 'n', 'r', 't']
+const specialParsers = specialChars.map(c => isChar(c)).concat(unicodeParser)
 
 function nullParser (s) {
   if (!s.startsWith('null')) return null
@@ -172,15 +174,7 @@ function unicodeParser (s) {
 
 function stringParser (s) {
   const justQuoteP = isChar('"')
-  const quoteParser = isChar('"')
   const rSolidusParser = isChar('\\')
-  const solidusParser = isChar('/')
-  const backspaceParser = isChar('b')
-  const formfeedParser = isChar('f')
-  const newlineParser = isChar('n')
-  const crParser = isChar('r')
-  const htabParser = isChar('t')
-  const specialParsers = [quoteParser, solidusParser, backspaceParser, formfeedParser, newlineParser, crParser, htabParser, unicodeParser, rSolidusParser]
   function applyParsers (s) {
     for (let i = 0; i < specialParsers.length; i++) {
       let aresP = specialParsers[i](s)
