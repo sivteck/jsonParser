@@ -72,7 +72,6 @@ function applyFuncs (arrF, inpS) {
 
 function pickFuncs (currState, loc) {
   if (loc === 0) return initFuncs
-
   for (let i = 0; i < currState.length; i++) {
     if (currState[i] !== null) return afterFuncs[i]
   }
@@ -86,13 +85,6 @@ function getResult (arrR) {
   return null
 }
 
-function consumeSpaces (s) {
-  while (s[0] === ' ' || s[0] === '\n' || s[0] === '\r' || s[0] === '\f') {
-    s = s.slice(1)
-  }
-  return s
-}
-
 function numberParser (s) {
   let state = new Array(initFuncs.length).fill(null)
   let parsed = ''
@@ -102,13 +94,11 @@ function numberParser (s) {
   let signParsed = 0
   let startZeroesParsed = 0
   let decimalPointsParsed = 0
-
   // Handle single occurence of zero
   if (s[0] === '0') {
-    let tempR = consumeSpaces(s.slice(1))
+    let tempR = s.slice(1).trimStart()
     if (tempR[0] === ',' || tempR[0] === '}' || tempR[0] === ']') return [s[0] * 1, tempR]
   }
-
   while (true) {
     // Pick transition functions based on state
     let transitionF = pickFuncs(state, ind)
@@ -121,9 +111,7 @@ function numberParser (s) {
     } else if (state === null && ind === 0) return null
     // using var here for code brevity
     var [v, rest] = getResult(state)
-    if ((ind < 1) && (isZero(v) !== null)) {
-      startZeroesParsed++
-    }
+    if ((ind < 1) && (isZero(v) !== null)) startZeroesParsed++
     // Handle recurring "E/e"
     if (isExponential(remainingString)) expParsed++
     // Handle recurring "+/-"
@@ -181,8 +169,6 @@ function unicodeParser (s) {
     } else return null
   }
   let val = String.fromCodePoint(parseInt(codePoint, 16))
-  // console.log('============From unicodeParser()========')
-  // console.log(val)
   return [val, s.slice(5)]
 }
 
@@ -214,9 +200,6 @@ function stringParser (s) {
   let flagQ = 0
   remainingString = s.slice(ind)
   while (true) {
-    //    console.log('===========From String Parser===============')
-    //    console.log('momo')
-    //    console.log(remainingString)
     if (remainingString.length === 0 && quotesParsed === 2) return [parsed, remainingString]
     if (quotesParsed === 2) {
       if (flagQ === 1) {
@@ -225,43 +208,23 @@ function stringParser (s) {
       } else return [parsed, remainingString]
     }
     let iniC = remainingString[0]
-    // if (remainingString.length === 0) return 0
-    // Handle special characters that are not escaped
     if (iniC === '\n' || iniC === '\t' || iniC === '\r' || iniC === '\f' || iniC === '\b') return null
     let checkBackslash = rSolidusParser(remainingString)
     if (checkBackslash !== null) {
-      // console.log('meme')
-      // console.log(quotesParsed)
       let resP = applyParsers(remainingString.slice(1))
-      // flagQ = 1
       if (resP === null) return null
       else {
         flagQ = 1
-        // parsed += checkBackslash[0]
         parsed += resP[0]
-        // console.log(resP[0])
-        // console.log(resP[1])
         remainingString = resP[1]
-        // remainingString = remainingString.slice(1)
-        // console.log('============From while inside SP checkBackslash!=null===========')
-        // console.log(resP[0])
-        // console.log(parsed)
-        // console.log(remainingString)
         if (quotesParsed === 2) quotesParsed -= 1
         if (remainingString.length === 0) return null
         continue
       }
     } else flagQ = 0
-    // console.log('======after checkBackslash==============')
-    // console.log(remainingString)
     let qRes = justQuoteP(remainingString)
     if (qRes !== null) quotesParsed++
     ind++
-    /* if (quotesParsed === 2) {
-      // parsed += '"'
-      remainingString = remainingString.slice(1)
-      return [parsed, remainingString]
-    } */
     if (qRes === null && remainingString.length !== 0) parsed += remainingString[0]
     remainingString = remainingString.slice(1)
   }
@@ -281,20 +244,19 @@ function arrayParser (s) {
       }
     }
     if (resHLP === null) return null
-    s = consumeSpaces(resHLP[1])
+    s = resHLP[1].trimStart()
     if (s[0] === ']') return [arrR, s.slice(1)]
     if (s[0] === ',') {
-      s = s.slice(1)
-      s = consumeSpaces(s)
+      s = s.slice(1).trimStart()
       // Check if it is extra comma
       if (s[0] === ']') return null
     }
-    s = consumeSpaces(s)
+    s = s.trimStart()
   }
 }
 
 function valueParser (s) {
-  s = consumeSpaces(s)
+  s = s.trimStart()
   for (let i = 0; i < parsers.length; i++) {
     let resHLP = parsers[i](s)
     if (resHLP !== null) return resHLP
@@ -303,30 +265,30 @@ function valueParser (s) {
 }
 
 function objectParser (s) {
-  s = consumeSpaces(s)
+  s = s.trimStart()
   if (s[0] !== '{') return null
   let objR = {}
-  s = consumeSpaces(s.slice(1))
+  s = s.slice(1).trimStart()
   while (true) {
-    s = consumeSpaces(s)
+    s = s.trimStart()
     if (s[0] === '}') return [objR, s.slice(1)]
     let key = stringParser(s)
     if (key === null) return null
     let remS = key[1]
-    s = consumeSpaces(remS)
+    s = remS.trimStart()
     if (s[0] !== ':') return null
-    s = consumeSpaces(s.slice(1))
+    s = s.slice(1).trimStart()
     let value = valueParser(s)
     if (value === null) return null
     objR[key[0]] = value[0]
-    s = consumeSpaces(value[1])
+    s = value[1].trimStart()
     if (s[0] === ',') {
       s = s.slice(1)
-      s = consumeSpaces(s)
+      s = s.trimStart()
       // Check if it is extra comma
       if (s[0] === '}') return null
     }
-    s = consumeSpaces(s)
+    s = s.trimStart()
   }
 }
 
@@ -374,21 +336,20 @@ function testInfo (fileNum) {
     console.log('JSON.parse failed')
   }
   if (parsed !== null) {
-    let s = consumeSpaces(parsed[1])
+    let s = parsed[1].trimStart()
     if (s.length > 0) {
       console.log('NO')
       return
     }
     console.log('YES')
     console.log('=======PARSED JSON====================')
-    console.log(parsed[0])
+    console.log(JSON.stringify(parsed[0]))
   } else console.log('NO')
   console.log('\n')
 }
-testInfo(34)
 
 let count = getFiles('./test').length
 
-for (let j = 0; j < count - 2; j++) {
+for (let j = 0; j < count; j++) {
   testInfo(j + 1)
 }
