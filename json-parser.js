@@ -49,7 +49,6 @@ function isZero (inp) {
 
 const returnsNull = (s) => null
 
-// Transition Functions
 const initFuncs = [isNegative, isZero, isDigit, returnsNull, returnsNull]
 const afterSigned = [returnsNull, isZero, isDigit, returnsNull, returnsNull]
 const afterZero = [returnsNull, returnsNull, returnsNull, isDecimalPoint, returnsNull]
@@ -157,7 +156,6 @@ function hexParser (s) {
 }
 
 function unicodeParser (s) {
-  // if (s[0] === '\\') s = s.slice(1)
   const unicodeParse = isChar('u')
   let uPR = unicodeParse(s)
   if (uPR === null) return null
@@ -191,14 +189,12 @@ function stringParser (s) {
     return null
   }
   let parsed = ''
-  let ind = 0
   let remainingString = s
   let quotesParsed = 0
   if (justQuoteP(s) === null) return null
   quotesParsed++
-  ind++
   let flagQ = 0
-  remainingString = s.slice(ind)
+  remainingString = s.slice(1)
   while (true) {
     if (remainingString.length === 0 && quotesParsed === 2) return [parsed, remainingString]
     if (quotesParsed === 2) {
@@ -224,7 +220,6 @@ function stringParser (s) {
     } else flagQ = 0
     let qRes = justQuoteP(remainingString)
     if (qRes !== null) quotesParsed++
-    ind++
     if (qRes === null && remainingString.length !== 0) parsed += remainingString[0]
     remainingString = remainingString.slice(1)
   }
