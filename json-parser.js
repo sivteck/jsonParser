@@ -1,5 +1,5 @@
-const path = require('path')
-const fs = require('fs')
+exports.valueParser = valueParser
+
 const parsers = [stringParser, numberParser, nullParser, booleanParser, arrayParser, objectParser]
 const specialChars = ['"', '\\', '/', 'b', 'f', 'n', 'r', 't']
 const specialParsers = specialChars.map(c => isChar(c)).concat(unicodeParser)
@@ -114,11 +114,11 @@ function numberParser (s) {
     var [v, rest] = getResult(state)
     if ((ind < 1) && (isZero(v) !== null)) startZeroesParsed++
     // Handle recurring "E/e"
-    if (isExponential(remainingString)) expParsed++
+    else if (isExponential(remainingString)) expParsed++
     // Handle recurring "+/-"
-    if (isSigned(remainingString)) signParsed++
+    else if (isSigned(remainingString)) signParsed++
     // Handle recurring "." and decimal after "E/e"
-    if (isDecimalPoint(remainingString)) {
+    else if (isDecimalPoint(remainingString)) {
       if (expParsed > 0) decimalPointsParsed += 2
       else decimalPointsParsed++
     }
@@ -220,11 +220,11 @@ function stringParser (s) {
 }
 
 function arrayParser (s) {
-  if (s[0] !== '[') return null
+  if (!s.startsWith('[')) return null
   s = s.slice(1).trimStart()
   let arrR = []
   while (true) {
-    if (s[0] === ']') return [arrR, s.slice(1)]
+    if (s.startsWith(']')) return [arrR, s.slice(1)]
     for (let i = 0; i < parsers.length; i++) {
       var resHLP = parsers[i](s)
       if (resHLP !== null) {
@@ -234,11 +234,11 @@ function arrayParser (s) {
     }
     if (resHLP === null) return null
     s = resHLP[1].trimStart()
-    if (s[0] === ']') return [arrR, s.slice(1)]
-    if (s[0] === ',') {
+    if (s.startsWith(']')) return [arrR, s.slice(1)]
+    if (s.startsWith(',')) {
       s = s.slice(1).trimStart()
       // Check if it is extra comma
-      if (s[0] === ']') return null
+      if (s.startsWith(']')) return null
     }
     s = s.trimStart()
   }
@@ -289,56 +289,4 @@ function factoryParser (s) {
       else return parseResult[0]
     } else return null
   }
-}
-
-function getFiles (dirName) {
-  let dirPath = path.join(dirName)
-  let fileL = fs.readdirSync(dirPath)
-  fileL = fileL.map(file => path.join(dirName, file))
-  return fileL
-}
-
-function readFile (fileNum) {
-  let dirName = './test'
-  let files = getFiles(dirName)
-  return [files[fileNum - 1], fs.readFileSync(files[fileNum - 1])]
-}
-
-function testInfo (fileNum) {
-  let [fileName, fileContent] = readFile(fileNum)
-  let mess = String.raw`
-  ==Filename=====: ${fileName}
-  ==FileContent==: ${String(fileContent)}`
-
-  console.log(mess.slice(0, 300))
-  console.log('=======IS VALID JSON?=================')
-  console.time('custom_impl' + String(fileNum))
-  let parsed = valueParser(String(fileContent))
-  console.timeEnd('custom_impl' + String(fileNum))
-  console.log('^^^^^^Time Taken for this implementation')
-  console.time('JSimpl' + String(fileNum))
-  try {
-    let parseJS = JSON.parse(String(fileContent))
-    console.timeEnd('JSimpl' + String(fileNum))
-    console.log('^^^^^^Time taken for JSON.parse')
-  } catch (err) {
-    console.log('JSON.parse failed')
-  }
-  if (parsed !== null) {
-    let s = parsed[1].trimStart()
-    if (s.length > 0) {
-      console.log('NO')
-      return
-    }
-    console.log('YES')
-    console.log('=======PARSED JSON====================')
-    console.log(JSON.stringify(parsed[0]))
-  } else console.log('NO')
-  console.log('\n')
-}
-
-let count = getFiles('./test').length
-
-for (let j = 0; j < count; j++) {
-  testInfo(j + 1)
 }
